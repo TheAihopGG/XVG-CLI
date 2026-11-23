@@ -201,8 +201,8 @@ def _del(id: int, y: bool):
         result = cur.execute(
             """
 DELETE FROM customers
-WHERE
-    id = ? returning id,
+WHERE id = ?
+RETURNING id,
     first_name,
     last_name,
     created_at
