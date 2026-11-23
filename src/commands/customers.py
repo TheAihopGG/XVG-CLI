@@ -167,13 +167,14 @@ RETURNING id,
 
 @customers_group.command()
 @click.argument("id", type=int, callback=validate_id, required=True)
-def res(id: int):
+def restore(id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
             """
 UPDATE customers
 SET is_deleted = FALSE
+WHERE id = ?
 RETURNING id,
     first_name,
     last_name,
