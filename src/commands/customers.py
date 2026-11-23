@@ -147,6 +147,7 @@ def rem(id: int):
             """
 UPDATE customers
 SET is_deleted = TRUE
+WHERE id = ?
 RETURNING id,
     first_name,
     last_name,
