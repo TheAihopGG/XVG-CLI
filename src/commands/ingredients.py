@@ -1,9 +1,9 @@
 import click
 from tabulate import tabulate
 
-from config import load_config
-from database import connect_to_db
-from validators import validate_id, validate_title, validate_price, validate_unit
+from core.config import load_config
+from core.database import connect_to_db
+from core.validators import validate_id, validate_title, validate_price, validate_unit
 
 
 @click.group("ingredients")

@@ -1,6 +1,6 @@
 import yoyo
 import sqlite3
-from consts import BASE_DIR
+from core.consts import BASE_DIR
 
 
 def run_migrations(config: dict):

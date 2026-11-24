@@ -1,7 +1,7 @@
 import click
 
-from database import run_migrations
-from config import load_config
+from core.database import run_migrations
+from core.config import load_config
 from commands import sales_group, recipes_group, ingredients_group, customers_group
 
 

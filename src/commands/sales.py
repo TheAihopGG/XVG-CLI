@@ -3,9 +3,9 @@ import itertools
 
 import click
 from tabulate import tabulate
-from database import connect_to_db
-from config import load_config
-from validators import validate_id
+from core.database import connect_to_db
+from core.config import load_config
+from core.validators import validate_id
 
 
 @click.group("sales")

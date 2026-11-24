@@ -1,7 +1,7 @@
 import platformdirs
 import tomllib
 import os
-from consts import BASE_DIR
+from core.consts import BASE_DIR
 
 
 def load_config():
