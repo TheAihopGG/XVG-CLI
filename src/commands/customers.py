@@ -4,7 +4,12 @@ from tabulate import tabulate
 from core.database import connect_to_db
 from core.config import load_config
 from core.utils import levenshtein
-from core.validators import validate_fname, validate_lname, validate_id
+from core.validators import (
+    validate_fname,
+    validate_lname,
+    validate_id,
+    validate_customer_find_query,
+)
 
 
 @click.group("customers")
@@ -191,7 +196,7 @@ def restore(id: int):
         if result.rowcount > 0:
             click.echo(tabulate(row, ["id", "first_name", "last_name", "created_at"]))
             db.commit()
-            click.echo("Запись восстановлен")
+            click.echo("Запись восстановлена")
         else:
             click.echo("Запись не найдена")
         cur.close()
@@ -220,14 +225,14 @@ def _del(id: int, y: bool):
             click.echo(tabulate(row, ["id", "first_name", "last_name", "created_at"]))
             if y:
                 db.commit()
-                click.echo("Запись удалена")
+                click.echo("Запись уничтожена")
             else:
-                if click.confirm("Вы действительно хотите удалить эту запись?"):
+                if click.confirm("Вы действительно хотите уничтожить эту запись?"):
                     db.commit()
-                    click.echo("Запись удалена")
+                    click.echo("Запись уничтожена")
                 else:
                     db.rollback()
-                    click.echo("Удаление отменено")
+                    click.echo("Уничтожение отменено")
         else:
             click.echo("Запись не найдена")
         cur.close()
@@ -235,21 +240,13 @@ def _del(id: int, y: bool):
 
 @customers_group.command()
 @click.option(
-    "-fn",
-    "--first-name",
+    "-q",
+    "--query",
     type=str,
-    callback=validate_fname,
-    required=False,
+    callback=validate_customer_find_query,
+    required=True,
 )
-@click.option(
-    "-ln",
-    "--last-name",
-    type=str,
-    callback=validate_lname,
-    required=False,
-)
-def find(first_name: str, last_name: str):
-    full_name = first_name + " " + last_name
+def find(query: str):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         db.create_function("levenshtein", 2, levenshtein)
@@ -265,7 +262,7 @@ def find(first_name: str, last_name: str):
               AND is_deleted = FALSE
             ORDER BY rank ASC
             """,
-            (full_name, 10),
+            (query, 1000),
         )
         row = cur.fetchall()
         click.echo(f"Найдено {len(row)} совпадений")
