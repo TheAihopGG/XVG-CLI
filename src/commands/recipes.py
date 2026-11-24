@@ -26,7 +26,11 @@ def add(title: str, description: str, cost: float):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            "insert or ignore into recipes (title, description, cost) values (?, ?, ?) returning id, title, cost, description",
+            """
+            INSERT OR IGNORE INTO recipes (title, description, cost)
+            VALUES (?, ?, ?)
+            RETURNING id, title, cost, description
+            """,
             (title, description, cost),
         )
         row = cur.fetchall()
@@ -50,7 +54,11 @@ def get(id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         cur.execute(
-            "select id, title, cost, description from recipes where id = ?",
+            """
+            SELECT id, title, cost, description
+            FROM recipes
+            WHERE id = ?
+            """,
             (id,),
         )
         if row := cur.fetchall():
@@ -79,11 +87,13 @@ def upd(
 
         cur.execute(
             """
-            update recipes 
-            set title = coalesce(?, title), 
-                description = coalesce(?, description),
-                cost = coalesce(?, cost)
-            where id = ? returning id, title, description, cost, created_at
+            UPDATE recipes
+            SET
+                title = COALESCE(?, title),
+                description = COALESCE(?, description),
+                cost = COALESCE(?, cost)
+            WHERE id = ?
+            RETURNING id, title, description, cost, created_at
             """,
             (title, description, cost, id),
         )
@@ -109,7 +119,11 @@ def _del(id: int, y: bool):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            "delete from recipes where id = ? returning id, title, description, created_at",
+            """
+            DELETE FROM recipes
+            WHERE id = ?
+            RETURNING id, title, description, created_at
+            """,
             (id,),
         )
         row = cur.fetchall()
@@ -134,7 +148,12 @@ def _del(id: int, y: bool):
 def list():
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
-        cur.execute("select id, title, description, cost, created_at from recipes")
+        cur.execute(
+            """
+            SELECT id, title, description, cost, created_at
+            FROM recipes
+            """
+        )
         if row := cur.fetchall():
             click.echo(f"Найдено {len(row)} записей")
             click.echo(
@@ -152,7 +171,15 @@ def info(recipe_id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         cur.execute(
-            "select (select title from recipes where id = :recipe_id), (select cost from recipes where id = :recipe_id), SUM(ingredients.price * recipe_ingredients.quantity) from recipe_ingredients left join ingredients on recipe_ingredients.ingredient_id = ingredients.id where recipe_ingredients.recipe_id = :recipe_id",
+            """
+            SELECT
+                (SELECT title FROM recipes WHERE id = :recipe_id),
+                (SELECT cost FROM recipes WHERE id = :recipe_id),
+                SUM(ingredients.price * recipe_ingredients.quantity)
+            FROM recipe_ingredients
+            LEFT JOIN ingredients ON recipe_ingredients.ingredient_id = ingredients.id
+            WHERE recipe_ingredients.recipe_id = :recipe_id
+            """,
             {"recipe_id": recipe_id},
         )
         if row := cur.fetchall():
@@ -174,9 +201,10 @@ def recipes_ingredients_add(recipe_id: int, ingredient_id: int, quantity: float)
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            """insert or ignore 
-            into recipe_ingredients (recipe_id, ingredient_id, quantity)
-            values (?, ?, ?)""",
+            """
+            INSERT OR IGNORE INTO recipe_ingredients (recipe_id, ingredient_id, quantity)
+            VALUES (?, ?, ?)
+            """,
             (
                 recipe_id,
                 ingredient_id,
@@ -215,10 +243,13 @@ def recipes_ingredients_del(recipe_id: int, ingredient_id: int, y: bool):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            """delete from recipe_ingredients
-                                where recipe_id = ? and ingredient_id = ?
-                                returning (select title from recipes where id = ?),
-                                          (select title from ingredients where id = ?)""",
+            """
+            DELETE FROM recipe_ingredients
+            WHERE recipe_id = ? AND ingredient_id = ?
+            RETURNING
+                (SELECT title FROM recipes WHERE id = ?),
+                (SELECT title FROM ingredients WHERE id = ?)
+            """,
             (recipe_id, ingredient_id, recipe_id, ingredient_id),
         )
         row = cur.fetchall()
@@ -247,11 +278,17 @@ def recipes_ingredients_upd(recipe_id: int, ingredient_id: int, quantity: float)
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            """update recipe_ingredients
-               set quantity = :quantity where recipe_id = :recipe_id and ingredient_id = :ingredient_id
-               returning (select title from recipes where id = :recipe_id),
-                         (select title from ingredients where id = :ingredient_id),
-                         (select quantity || ' ' || (select unit from ingredients where id = :ingredient_id) from recipe_ingredients where recipe_id = :recipe_id and ingredient_id = :ingredient_id)""",
+            """
+            UPDATE recipe_ingredients
+            SET quantity = :quantity
+            WHERE recipe_id = :recipe_id AND ingredient_id = :ingredient_id
+            RETURNING
+                (SELECT title FROM recipes WHERE id = :recipe_id),
+                (SELECT title FROM ingredients WHERE id = :ingredient_id),
+                (SELECT quantity || ' ' || (SELECT unit FROM ingredients WHERE id = :ingredient_id)
+                 FROM recipe_ingredients
+                 WHERE recipe_id = :recipe_id AND ingredient_id = :ingredient_id)
+            """,
             {
                 "recipe_id": recipe_id,
                 "ingredient_id": ingredient_id,
@@ -274,10 +311,16 @@ def recipes_ingredients_list(recipe_id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         cur.execute(
-            """select ingredients.id, ingredients.title, recipe_ingredients.quantity || ' ' || ingredients.unit as quantity, recipe_ingredients.quantity * ingredients.price || ' ' || ingredients.unit
-                       from recipe_ingredients
-                       left join ingredients on recipe_ingredients.ingredient_id = ingredients.id
-                       where recipe_id = ?""",
+            """
+            SELECT
+                ingredients.id,
+                ingredients.title,
+                recipe_ingredients.quantity || ' ' || ingredients.unit AS quantity,
+                recipe_ingredients.quantity * ingredients.price || ' ' || ingredients.unit
+            FROM recipe_ingredients
+            LEFT JOIN ingredients ON recipe_ingredients.ingredient_id = ingredients.id
+            WHERE recipe_id = ?
+            """,
             (recipe_id,),
         )
         if row := cur.fetchall():

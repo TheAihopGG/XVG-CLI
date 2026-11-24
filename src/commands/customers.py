@@ -32,8 +32,10 @@ def add(first_name: str, last_name: str):
         cur = db.cursor()
         result = cur.execute(
             """
-insert or ignore into customers (first_name, last_name) values (?, ?) returning id, first_name, last_name, created_at
-""",
+            INSERT OR IGNORE INTO customers (first_name, last_name)
+            VALUES (?, ?)
+            RETURNING id, first_name, last_name, created_at
+            """,
             (
                 first_name,
                 last_name,
@@ -61,17 +63,15 @@ def get(id: int):
         cur = db.cursor()
         cur.execute(
             """
-  SELECT
-    id,
-    first_name,
-    last_name,
-    created_at,
-    is_deleted
-  FROM
-    customers
-  WHERE
-    id = ?
-""",
+            SELECT
+                id,
+                first_name,
+                last_name,
+                created_at,
+                is_deleted
+            FROM customers
+            WHERE id = ?
+            """,
             (id,),
         )
         if row := cur.fetchall():
@@ -109,16 +109,17 @@ def upd(id: int, first_name: str, last_name: str):
         cur = db.cursor()
         result = cur.execute(
             """
-UPDATE customers
-SET
-    first_name = COALESCE(?, first_name),
-    last_name = COALESCE(?, last_name)
-WHERE id = ? AND is_deleted = FALSE
-RETURNING id,
-    first_name,
-    last_name,
-    created_at
-""",
+            UPDATE customers
+            SET
+                first_name = COALESCE(?, first_name),
+                last_name = COALESCE(?, last_name)
+            WHERE id = ? AND is_deleted = FALSE
+            RETURNING
+                id,
+                first_name,
+                last_name,
+                created_at
+            """,
             (
                 first_name,
                 last_name,
@@ -147,14 +148,15 @@ def rm(id: int):
         cur = db.cursor()
         result = cur.execute(
             """
-UPDATE customers
-SET is_deleted = TRUE
-WHERE id = ?
-RETURNING id,
-    first_name,
-    last_name,
-    created_at
-""",
+            UPDATE customers
+            SET is_deleted = TRUE
+            WHERE id = ?
+            RETURNING
+                id,
+                first_name,
+                last_name,
+                created_at
+            """,
             (id,),
         )
         row = cur.fetchall()
@@ -174,14 +176,15 @@ def restore(id: int):
         cur = db.cursor()
         result = cur.execute(
             """
-UPDATE customers
-SET is_deleted = FALSE
-WHERE id = ?
-RETURNING id,
-    first_name,
-    last_name,
-    created_at
-""",
+            UPDATE customers
+            SET is_deleted = FALSE
+            WHERE id = ?
+            RETURNING
+                id,
+                first_name,
+                last_name,
+                created_at
+            """,
             (id,),
         )
         row = cur.fetchall()
@@ -202,13 +205,14 @@ def _del(id: int, y: bool):
         cur = db.cursor()
         result = cur.execute(
             """
-DELETE FROM customers
-WHERE id = ?
-RETURNING id,
-    first_name,
-    last_name,
-    created_at
-""",
+            DELETE FROM customers
+            WHERE id = ?
+            RETURNING
+                id,
+                first_name,
+                last_name,
+                created_at
+            """,
             (id,),
         )
         row = cur.fetchall()
@@ -253,12 +257,16 @@ def find(first_name: str, last_name: str):
         db.create_function("levenshtein", 2, levenshtein)
         cur.execute(
             """
-SELECT id,
-    first_name,
-    last_name,
-    levenshtein(first_name || ' ' || last_name, ?) AS rank
-FROM customers
-WHERE rank <= ? AND is_deleted = FALSE order by rank asc""",
+            SELECT
+                id,
+                first_name,
+                last_name,
+                levenshtein(first_name || ' ' || last_name, ?) AS rank
+            FROM customers
+            WHERE rank <= ?
+              AND is_deleted = FALSE
+            ORDER BY rank ASC
+            """,
             (full_name, 10),
         )
         row = cur.fetchall()
@@ -272,15 +280,14 @@ WHERE rank <= ? AND is_deleted = FALSE order by rank asc""",
 def list():
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
-        cur.execute(
-            """
-SELECT id,
-    first_name,
-    last_name,
-    created_at
-FROM customers
-""",
-        )
+        cur.execute("""
+            SELECT
+                id,
+                first_name,
+                last_name,
+                created_at
+            FROM customers
+            """)
         row = cur.fetchall()
         click.echo(f"Найдено {len(row)} записей")
         click.echo(tabulate(row, ["id", "first_name", "last_name", "created_at"]))

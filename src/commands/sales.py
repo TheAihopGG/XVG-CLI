@@ -22,27 +22,27 @@ def add(recipe_id: int, customer_id: int, quantity: int):
         cur = db.cursor()
         result = cur.execute(
             """
-  INSERT INTO sales (recipe_id, customer_id, cost, cost_price, quantity) 
-              VALUES (
-                  :recipe_id, 
-                  :customer_id, 
-                  (SELECT cost FROM recipes WHERE id = :recipe_id), 
-                  (SELECT COALESCE(SUM(i.price * ri.quantity), 0) 
-                   FROM recipe_ingredients ri 
-                   LEFT JOIN ingredients i ON ri.ingredient_id = i.id 
-                   WHERE ri.recipe_id = :recipe_id), 
-                  :quantity
-              ) 
-              RETURNING 
-                  id, 
-                  recipe_id,
-                  (SELECT title FROM recipes WHERE id = :recipe_id) AS recipe_title, 
-                  customer_id,
-                  (SELECT first_name || ' ' || last_name FROM customers WHERE id = :customer_id) AS customer_name, 
-                  cost, 
-                  cost_price, 
-                  quantity
-""",
+            INSERT INTO sales (recipe_id, customer_id, cost, cost_price, quantity)
+            VALUES (
+                :recipe_id,
+                :customer_id,
+                (SELECT cost FROM recipes WHERE id = :recipe_id),
+                (SELECT COALESCE(SUM(i.price * ri.quantity), 0)
+                 FROM recipe_ingredients ri
+                 LEFT JOIN ingredients i ON ri.ingredient_id = i.id
+                 WHERE ri.recipe_id = :recipe_id),
+                :quantity
+            )
+            RETURNING
+                id,
+                recipe_id,
+                (SELECT title FROM recipes WHERE id = :recipe_id) AS recipe_title,
+                customer_id,
+                (SELECT first_name || ' ' || last_name FROM customers WHERE id = :customer_id) AS customer_name,
+                cost,
+                cost_price,
+                quantity
+            """,
             {
                 "recipe_id": recipe_id,
                 "customer_id": customer_id,
@@ -81,16 +81,17 @@ def get(id: int):
         cur = db.cursor()
         cur.execute(
             """
-  SELECT
-    id,
-    (SELECT title FROM recipes WHERE id = recipe_id),
-    (SELECT first_name || ' ' || last_name FROM customers WHERE id = customer_id),
-    cost,
-    cost_price,
-    quantity,
-    created_at
-      FROM sales WHERE id = ?
-""",
+            SELECT
+                id,
+                (SELECT title FROM recipes WHERE id = recipe_id),
+                (SELECT first_name || ' ' || last_name FROM customers WHERE id = customer_id),
+                cost,
+                cost_price,
+                quantity,
+                created_at
+            FROM sales
+            WHERE id = ?
+            """,
             (id,),
         )
         if row := cur.fetchall():
@@ -127,20 +128,21 @@ def upd(id: int, recipe_id: int, customer_id: int, quantity: int, cost: float):
         cur = db.cursor()
         result = cur.execute(
             """
-  UPDATE sales SET
-      recipe_id = COALESCE(:recipe_id, recipe_id),
-      customer_id = COALESCE(:customer_id, customer_id),
-      quantity = COALESCE(:quantity, quantity),
-      cost = COALESCE(:cost, cost)
-  WHERE id = :id
-  RETURNING
-  id
-  (SELECT title FROM recipes WHERE id = :recipe_id),
-  (SELECT first_name || ' ' || last_name FROM customers WHERE id = :customer_id),
-  cost,
-  cost_price,
-  quantity
-""",
+            UPDATE sales
+            SET
+                recipe_id = COALESCE(:recipe_id, recipe_id),
+                customer_id = COALESCE(:customer_id, customer_id),
+                quantity = COALESCE(:quantity, quantity),
+                cost = COALESCE(:cost, cost)
+            WHERE id = :id
+            RETURNING
+                id,
+                (SELECT title FROM recipes WHERE id = :recipe_id),
+                (SELECT first_name || ' ' || last_name FROM customers WHERE id = :customer_id),
+                cost,
+                cost_price,
+                quantity
+            """,
             {
                 "id": id,
                 "cost": cost,
@@ -179,13 +181,17 @@ def _del(id: int, y: bool):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            """delete FROM sales WHERE id = :recipe_id RETURNING 
+            """
+            DELETE FROM sales
+            WHERE id = :recipe_id
+            RETURNING
                 id,
                 (SELECT title FROM recipes WHERE id = :recipe_id),
                 (SELECT first_name || ' ' || last_name FROM customers WHERE id = customer_id),
                 cost,
                 cost_price,
-                quantity""",
+                quantity
+            """,
             {"recipe_id": id},
         )
         row = cur.fetchall()
@@ -229,8 +235,16 @@ def stats(begin: datetime, end: datetime, customer_id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         cur.execute(
-            """SELECT SUM(cost * quantity), SUM(cost_price * quantity), SUM(cost * quantity) - SUM(cost_price * quantity)
-        FROM sales WHERE customer_id = COALESCE(?, customer_id) AND created_at >= ? AND created_at <= ?""",
+            """
+            SELECT
+                SUM(cost * quantity),
+                SUM(cost_price * quantity),
+                SUM(cost * quantity) - SUM(cost_price * quantity)
+            FROM sales
+            WHERE customer_id = COALESCE(?, customer_id)
+              AND created_at >= ?
+              AND created_at <= ?
+            """,
             (
                 customer_id,
                 begin,
@@ -261,17 +275,22 @@ def list(begin: datetime, end: datetime, customer_id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         cur.execute(
-            """SELECT 
-                 id,
-                 recipe_id,
-                 (SELECT title FROM recipes WHERE id = recipe_id),
-                 customer_id,
-                 (SELECT first_name || ' ' || last_name FROM customers WHERE id = customer_id),
-                 cost,
-                 cost_price,
-                 quantity,
-                 created_at
-               FROM sales WHERE customer_id = COALESCE(?, customer_id) AND created_at >= ? AND created_at <= ?""",
+            """
+            SELECT
+                id,
+                recipe_id,
+                (SELECT title FROM recipes WHERE id = recipe_id),
+                customer_id,
+                (SELECT first_name || ' ' || last_name FROM customers WHERE id = customer_id),
+                cost,
+                cost_price,
+                quantity,
+                created_at
+            FROM sales
+            WHERE customer_id = COALESCE(?, customer_id)
+              AND created_at >= ?
+              AND created_at <= ?
+            """,
             (
                 customer_id,
                 begin,

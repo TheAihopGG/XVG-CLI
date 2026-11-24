@@ -54,7 +54,11 @@ def get(id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         cur.execute(
-            "select id, title, price, unit, updated_at from ingredients where id = ?",
+            """
+            SELECT id, title, price, unit, updated_at
+            FROM ingredients
+            WHERE id = ?
+            """,
             (id,),
         )
         if row := cur.fetchall():
@@ -83,17 +87,14 @@ def upd(
 
         cur.execute(
             """
-  UPDATE ingredients
-  SET
-    title = coalesce(?, title),
-    price = coalesce(?, price),
-    unit = coalesce(?, unit)
-  WHERE
-    id = ? returning id,
-    title,
-    price,
-    unit
-""",
+            UPDATE ingredients
+            SET
+                title = COALESCE(?, title),
+                price = COALESCE(?, price),
+                unit = COALESCE(?, unit)
+            WHERE id = ?
+            RETURNING id, title, price, unit
+            """,
             (title, price, unit, id),
         )
         row = cur.fetchall()
@@ -114,7 +115,11 @@ def _del(id: int, y: bool):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            "delete from ingredients where id = ? returning id, title, price, unit, updated_at",
+            """
+            DELETE FROM ingredients
+            WHERE id = ?
+            RETURNING id, title, price, unit, updated_at
+            """,
             (id,),
         )
         row = cur.fetchall()
@@ -141,7 +146,12 @@ def _del(id: int, y: bool):
 def list():
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
-        cur.execute("select id, title, price, unit, updated_at from ingredients")
+        cur.execute(
+            """
+            SELECT id, title, price, unit, updated_at
+            FROM ingredients
+            """
+        )
         row = cur.fetchall()
         db.commit()
         click.echo(f"Найдено {len(row)} записей")
