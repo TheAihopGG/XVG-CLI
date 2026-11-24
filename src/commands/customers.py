@@ -272,19 +272,29 @@ def find(query: str):
 
 
 @customers_group.command()
-def list():
+@click.option("-sr", "--show-removed", is_flag=True, default=False)
+@click.option("-l", "--limit", type=int, default=100)
+def list(show_removed: bool, limit: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT
                 id,
                 first_name,
                 last_name,
+                is_deleted,
                 created_at
             FROM customers
-            """)
+            WHERE is_deleted = ?
+            LIMIT ?
+            """,
+            (show_removed, limit),
+        )
         row = cur.fetchall()
         click.echo(f"Найдено {len(row)} записей")
-        click.echo(tabulate(row, ["id", "first_name", "last_name", "created_at"]))
+        click.echo(
+            tabulate(row, ["id", "first_name", "last_name", "is_deleted", "created_at"])
+        )
         db.commit()
         cur.close()
