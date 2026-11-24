@@ -240,7 +240,6 @@ def _del(id: int, y: bool):
     type=str,
     callback=validate_fname,
     required=False,
-    default="",
 )
 @click.option(
     "-ln",
@@ -248,7 +247,6 @@ def _del(id: int, y: bool):
     type=str,
     callback=validate_lname,
     required=False,
-    default="",
 )
 def find(first_name: str, last_name: str):
     full_name = first_name + " " + last_name

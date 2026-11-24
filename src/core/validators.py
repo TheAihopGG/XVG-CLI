@@ -3,7 +3,7 @@ from re import fullmatch
 
 
 def validate_fname(ctx, param, value: str):
-    if value is "":
+    if value is None:
         return ""
     if fullmatch(r"^[а-яА-ЯёЁA-Za-z]{3,20}$", value):
         return value.lower()
@@ -11,7 +11,7 @@ def validate_fname(ctx, param, value: str):
 
 
 def validate_lname(ctx, param, value: str):
-    if value is "":
+    if value is None:
         return ""
     if fullmatch(r"^[а-яА-ЯёЁA-Za-z]{0,20}$", value):
         return value.lower()
