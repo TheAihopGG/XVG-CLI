@@ -1,3 +1,3 @@
-from pathlib import Path
+from .utils import get_base_dir
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = get_base_dir()

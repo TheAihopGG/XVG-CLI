@@ -1,3 +1,7 @@
+from pathlib import Path
+import sys
+
+
 def levenshtein(s1, s2):
     if len(s1) < len(s2):
         return levenshtein(s2, s1)
@@ -15,3 +19,12 @@ def levenshtein(s1, s2):
         previous_row = current_row
 
     return previous_row[-1]
+
+
+def get_base_dir() -> Path:
+    # Если запущено из бинарника PyInstaller
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS).resolve()
+
+    # Если обычный запуск из исходников
+    return Path(__file__).resolve().parent.parent.parent
