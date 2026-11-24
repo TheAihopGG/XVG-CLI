@@ -186,7 +186,7 @@ def info(recipe_id: int):
         cur.close()
 
 
-@recipes_group.group("ing")
+@recipes_group.group("ingredients")
 def recipes_ingredients_group():
     pass
 
