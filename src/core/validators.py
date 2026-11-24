@@ -10,6 +10,14 @@ def validate_fname(ctx, param, value: str):
     raise click.BadParameter("Некорректная имя")
 
 
+def validate_customer_find_query(ctx, param, value: str):
+    if value is None:
+        return ""
+    if fullmatch(r"^[а-яА-ЯёЁA-Za-z(\ ){0,1}]{3,20}$", value):
+        return value.lower()
+    raise click.BadParameter("Некорректный запрос")
+
+
 def validate_lname(ctx, param, value: str):
     if value is None:
         return ""
