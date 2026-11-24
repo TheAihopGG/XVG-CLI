@@ -6,7 +6,7 @@ from database import connect_to_db
 from validators import validate_id, validate_title, validate_price, validate_unit
 
 
-@click.group("ing")
+@click.group("ingredients")
 def ingredients_group():
     pass
 
@@ -146,12 +146,10 @@ def _del(id: int, y: bool):
 def list():
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
-        cur.execute(
-            """
+        cur.execute("""
             SELECT id, title, price, unit, updated_at
             FROM ingredients
-            """
-        )
+            """)
         row = cur.fetchall()
         db.commit()
         click.echo(f"Найдено {len(row)} записей")

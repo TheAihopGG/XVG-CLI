@@ -6,7 +6,7 @@ from config import load_config
 from validators import validate_title, validate_desc, validate_id, validate_quantity
 
 
-@click.group("rps")
+@click.group("recipes")
 def recipes_group():
     pass
 
@@ -148,12 +148,10 @@ def _del(id: int, y: bool):
 def list():
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
-        cur.execute(
-            """
+        cur.execute("""
             SELECT id, title, description, cost, created_at
             FROM recipes
-            """
-        )
+            """)
         if row := cur.fetchall():
             click.echo(f"Найдено {len(row)} записей")
             click.echo(
