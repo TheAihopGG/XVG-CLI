@@ -7,7 +7,7 @@ from utils import levenshtein
 from validators import validate_fname, validate_lname, validate_id
 
 
-@click.group("ctm")
+@click.group("customers")
 def customers_group():
     pass
 
@@ -31,7 +31,9 @@ def add(first_name: str, last_name: str):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
-            "insert or ignore into customers (first_name, last_name) values (?, ?) returning id, first_name, last_name, created_at",
+            """
+insert or ignore into customers (first_name, last_name) values (?, ?) returning id, first_name, last_name, created_at
+""",
             (
                 first_name,
                 last_name,
@@ -107,12 +109,12 @@ def upd(id: int, first_name: str, last_name: str):
         cur = db.cursor()
         result = cur.execute(
             """
-  UPDATE customers
-  SET
-    first_name = coalesce(?, first_name),
-    last_name = coalesce(?, last_name)
-  WHERE id = ? AND is_deleted = FALSE
-  RETURNING id,
+UPDATE customers
+SET
+    first_name = COALESCE(?, first_name),
+    last_name = COALESCE(?, last_name)
+WHERE id = ? AND is_deleted = FALSE
+RETURNING id,
     first_name,
     last_name,
     created_at
@@ -140,7 +142,7 @@ def upd(id: int, first_name: str, last_name: str):
 
 @customers_group.command()
 @click.argument("id", type=int, callback=validate_id, required=True)
-def rem(id: int):
+def rm(id: int):
     with connect_to_db(load_config()) as db:
         cur = db.cursor()
         result = cur.execute(
@@ -250,7 +252,13 @@ def find(first_name: str, last_name: str):
         cur = db.cursor()
         db.create_function("levenshtein", 2, levenshtein)
         cur.execute(
-            "select id, first_name, last_name, levenshtein(first_name || ' ' || last_name, ?) as rank from customers where rank <= ? AND is_deleted = FALSE order by rank asc",
+            """
+SELECT id,
+    first_name,
+    last_name,
+    levenshtein(first_name || ' ' || last_name, ?) AS rank
+FROM customers
+WHERE rank <= ? AND is_deleted = FALSE order by rank asc""",
             (full_name, 10),
         )
         row = cur.fetchall()
@@ -266,12 +274,12 @@ def list():
         cur = db.cursor()
         cur.execute(
             """
-SELECT
-    id,
+SELECT id,
     first_name,
     last_name,
     created_at
-FROM customers""",
+FROM customers
+""",
         )
         row = cur.fetchall()
         click.echo(f"Найдено {len(row)} записей")

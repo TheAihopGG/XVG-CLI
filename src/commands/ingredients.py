@@ -20,10 +20,9 @@ def add(title: str, price: float, unit: str):
         cur = db.cursor()
         result = cur.execute(
             """
-  INSERT
-  OR ignore INTO ingredients (title, price, unit)
-  VALUES
-    (?, ?, ?) returning id,
+INSERT OR IGNORE
+INTO ingredients (title, price, unit)
+VALUES (?, ?, ?) RETURNING id,
     title,
     price,
     unit
